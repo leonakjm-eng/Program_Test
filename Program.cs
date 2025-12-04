@@ -19,10 +19,21 @@ namespace FishTankGame
         }
     }
 
+    // Falling Food Class
+    public class FallingFood
+    {
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Size { get; set; } = 20f;
+        public float Speed { get; set; } = 2.0f; 
+
+        public PointF Center => new PointF(X + Size / 2, Y + Size / 2);
+        public float Radius => Size / 2;
+    }
+
     // Fish Object Class
     public class Fish
     {
-        // Properties
         public float X { get; set; }
         public float Y { get; set; }
         public float DX { get; set; }
@@ -30,11 +41,9 @@ namespace FishTankGame
         public float Size { get; set; } 
         public Color Color { get; set; } 
 
-        // Logic Properties
         public int EatCount { get; set; }
         public PointF? TargetPosition { get; set; }
         
-        // Difficulty Properties
         public float SpeedMultiplier { get; private set; }
         private float BaseSpeed;
 
@@ -44,15 +53,12 @@ namespace FishTankGame
         {
             X = x;
             Y = y;
-            Size = 30f; // Initial size
+            Size = 30f; 
             Color = color;
             SpeedMultiplier = speedMult;
             EatCount = 0;
 
-            // Random velocity scaled by multiplier
-            // Initial base speed is around 1.0 * SpeedMultiplier (vector length ~1.4 to 2.8?)
-            // Let's generate random vector and normalize to a specific speed range.
-            float initSpeed = (float)(rand.NextDouble() * 2 + 1) * SpeedMultiplier; // 1 to 3 * mult
+            float initSpeed = (float)(rand.NextDouble() * 2 + 1) * SpeedMultiplier; 
             SetVelocity(initSpeed);
         }
 
@@ -64,17 +70,11 @@ namespace FishTankGame
             BaseSpeed = speed;
         }
 
-        // Clone method for Reproduction
         public Fish Clone()
         {
             Fish newFish = new Fish(this.X, this.Y, this.SpeedMultiplier, this.Color);
-            
-            // Inherit traits
             newFish.Size = this.Size;
-            // Inherit Speed (BaseSpeed) but random direction
             newFish.SetVelocity(this.BaseSpeed);
-            
-            // EatCount is 0 from constructor
             return newFish;
         }
 
@@ -82,8 +82,7 @@ namespace FishTankGame
         {
             if (TargetPosition.HasValue)
             {
-                // Lure Mode: Move towards target at 3x speed
-                // Speed increases as fish eats
+                // Chase Mode: Move towards target at 3x speed
                 float tx = TargetPosition.Value.X;
                 float ty = TargetPosition.Value.Y;
                 float cx = X + Size / 2;
@@ -103,7 +102,6 @@ namespace FishTankGame
                     Y += dirY * speed;
                 }
                 
-                // Clamp
                 if (X < bounds.Left) X = bounds.Left;
                 else if (X + Size > bounds.Right) X = bounds.Right - Size;
                 if (Y < bounds.Top) Y = bounds.Top;
@@ -111,11 +109,9 @@ namespace FishTankGame
             }
             else
             {
-                // Normal Mode
+                // Random Mode
                 X += DX;
                 Y += DY;
-
-                // Bounce
                 if (X < bounds.Left) { X = bounds.Left; DX = -DX; }
                 else if (X + Size > bounds.Right) { X = bounds.Right - Size; DX = -DX; }
                 if (Y < bounds.Top) { Y = bounds.Top; DY = -DY; }
@@ -134,15 +130,10 @@ namespace FishTankGame
 
         public void Eat(float growthMultiplier)
         {
-            // 1. Growth
             float growthRate = 0.1f * growthMultiplier;
             Size *= (1.0f + growthRate); 
 
-            // 2. Speed Up (Permanent)
-            // Increase magnitude by 0.5f
             float newSpeed = BaseSpeed + 0.5f;
-            
-            // Update velocity vector magnitude
             if (BaseSpeed > 0)
             {
                 float ratio = newSpeed / BaseSpeed;
@@ -151,7 +142,6 @@ namespace FishTankGame
             }
             BaseSpeed = newSpeed;
 
-            // 3. Increment Count
             EatCount++;
         }
 
@@ -163,24 +153,20 @@ namespace FishTankGame
     public class GameForm : Form
     {
         private List<Fish> fishes;
+        private List<FallingFood> fallingFoods;
         private Timer gameTimer;
         private Timer foodTimer;
 
-        // Areas
         private const int FoodPanelHeight = 100;
         private const int WindowWidth = 500;
         private const int WindowHeight = 500;
         private Rectangle foodPanelRect;
         private Rectangle fishTankRect;
 
-        // Food System
         private int foodCount = 0;
-        
-        // Interaction
         private bool isDragging = false;
         private Point currentMousePos;
 
-        // Game State Logic
         private int deathCount = 0;
         private int currentLevel = 1;
 
@@ -193,7 +179,7 @@ namespace FishTankGame
 
         public GameForm()
         {
-            this.Text = "Fish Tank Game - Dynamic Balance";
+            this.Text = "Fish Tank Game - Auto Chasing";
             this.ClientSize = new Size(WindowWidth, WindowHeight);
             this.DoubleBuffered = true; 
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -203,13 +189,14 @@ namespace FishTankGame
             fishTankRect = new Rectangle(0, FoodPanelHeight, WindowWidth, WindowHeight - FoodPanelHeight);
             
             fishes = new List<Fish>();
+            fallingFoods = new List<FallingFood>();
 
             gameTimer = new Timer();
             gameTimer.Interval = 16; 
             gameTimer.Tick += GameLoop;
             
             foodTimer = new Timer();
-            foodTimer.Interval = 5000; 
+            foodTimer.Interval = 2000; 
             foodTimer.Tick += AddFood;
 
             StartLevel(1);
@@ -220,7 +207,6 @@ namespace FishTankGame
 
         private int GetTargetCount()
         {
-            // Level 1: 10, Level 2: 12 ...
             return 10 + (currentLevel - 1) * 2;
         }
 
@@ -228,6 +214,7 @@ namespace FishTankGame
         {
             currentLevel = level;
             fishes.Clear();
+            fallingFoods.Clear();
             deathCount = 0;
             foodCount = 0; 
             
@@ -239,7 +226,6 @@ namespace FishTankGame
             {
                 float x = r.Next(fishTankRect.Left, fishTankRect.Right - 30);
                 float y = r.Next(fishTankRect.Top, fishTankRect.Bottom - 30);
-                
                 Color c = palette[r.Next(availableCount)];
                 fishes.Add(new Fish(x, y, speedMult, c));
             }
@@ -249,15 +235,129 @@ namespace FishTankGame
 
         private void AddFood(object sender, EventArgs e)
         {
-            foodCount++;
-            Invalidate(foodPanelRect); 
+            // Update Limit to 15
+            if (foodCount < 15)
+            {
+                foodCount++;
+            }
+            else
+            {
+                // Overflow: Drop from 15th slot (index 14)
+                // StartX=20, Gap=10, Size=20.
+                // Pos = StartX + i * (Size + Gap) = 20 + 14 * 30 = 440.
+                float dropX = 20 + 14 * 30; 
+                fallingFoods.Add(new FallingFood { X = dropX, Y = foodPanelRect.Bottom });
+            }
+            Invalidate();
+        }
+
+        private void FeedFish(Fish fish)
+        {
+             float growthMult = 1.0f + (currentLevel - 1) * 0.2f;
+             fish.Eat(growthMult);
+             
+             if (fish.EatCount >= 3)
+             {
+                 Fish child = fish.Clone();
+                 fishes.Add(child);
+                 fish.EatCount = 0;
+             }
         }
 
         private void GameLoop(object sender, EventArgs e)
         {
+            // 1. AI Logic: Set Targets
+            if (isDragging)
+            {
+                // If dragging, follow cursor (Lure Priority)
+                if (fishTankRect.Contains(currentMousePos))
+                {
+                    foreach (var fish in fishes) fish.TargetPosition = currentMousePos;
+                }
+            }
+            else
+            {
+                // If not dragging, check for falling food
+                foreach (var fish in fishes)
+                {
+                    FallingFood closest = null;
+                    float minDSq = float.MaxValue;
+                    
+                    foreach(var food in fallingFoods)
+                    {
+                        float dx = fish.Center.X - food.Center.X;
+                        float dy = fish.Center.Y - food.Center.Y;
+                        float dSq = dx * dx + dy * dy;
+                        
+                        if (dSq < minDSq)
+                        {
+                            minDSq = dSq;
+                            closest = food;
+                        }
+                    }
+
+                    if (closest != null)
+                    {
+                        fish.TargetPosition = closest.Center;
+                    }
+                    else
+                    {
+                        fish.TargetPosition = null; // Resume random move
+                    }
+                }
+            }
+
+            // 2. Move Fishes
             foreach (var fish in fishes) fish.Move(fishTankRect);
+            
+            // 3. Move Falling Foods & Collision
+            for (int i = fallingFoods.Count - 1; i >= 0; i--)
+            {
+                var food = fallingFoods[i];
+                food.Y += food.Speed; // Gravity
+
+                Fish eater = null;
+                foreach(var fish in fishes)
+                {
+                    float dx = fish.Center.X - food.Center.X;
+                    float dy = fish.Center.Y - food.Center.Y;
+                    float dist = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                    if (dist < fish.Radius + food.Radius)
+                    {
+                        eater = fish;
+                        break;
+                    }
+                }
+
+                if (eater != null)
+                {
+                    FeedFish(eater);
+                    fallingFoods.RemoveAt(i);
+                }
+                else if (food.Y > fishTankRect.Bottom)
+                {
+                    fallingFoods.RemoveAt(i);
+                }
+            }
+
             CheckPredation();
+            CheckLevelUp();
             Invalidate();
+        }
+        
+        private void CheckLevelUp()
+        {
+            if (fishes.Count >= GetTargetCount())
+            {
+                gameTimer.Stop();
+                foodTimer.Stop();
+                this.Update(); 
+                MessageBox.Show($"Level Complete! Starting Level {currentLevel + 1}", "Victory");
+                StartLevel(currentLevel + 1);
+                gameTimer.Start();
+                foodTimer.Start();
+            }
         }
 
         private void CheckPredation()
@@ -296,7 +396,6 @@ namespace FishTankGame
                 deathCount++;
             }
 
-            // Defeat
             if (deathCount >= 5)
             {
                 gameTimer.Stop();
@@ -320,15 +419,12 @@ namespace FishTankGame
             // Draw HUD
             using (Font font = new Font("Arial", 16, FontStyle.Bold))
             {
-                // Level (Left)
                 g.DrawString($"Level: {currentLevel}", font, Brushes.Blue, 20, 20);
 
-                // Alive / Target (Center)
                 string aliveText = $"Alive: {fishes.Count} / {GetTargetCount()}";
                 SizeF aliveSize = g.MeasureString(aliveText, font);
                 g.DrawString(aliveText, font, Brushes.Black, (WindowWidth - aliveSize.Width) / 2, 20);
 
-                // Death (Right)
                 string deathText = $"Death: {deathCount}";
                 SizeF deathSize = g.MeasureString(deathText, font);
                 g.DrawString(deathText, font, Brushes.Red, WindowWidth - deathSize.Width - 20, 20);
@@ -354,7 +450,15 @@ namespace FishTankGame
                 g.FillRectangle(waterBrush, fishTankRect);
             }
 
+            // Draw Fish
             foreach (var fish in fishes) fish.Draw(g);
+            
+            // Draw Falling Food
+            foreach (var food in fallingFoods)
+            {
+                g.FillEllipse(Brushes.OrangeRed, food.X, food.Y, food.Size, food.Size);
+                g.DrawEllipse(Pens.DarkRed, food.X, food.Y, food.Size, food.Size);
+            }
 
             if (isDragging)
             {
@@ -379,14 +483,9 @@ namespace FishTankGame
             if (isDragging)
             {
                 currentMousePos = e.Location;
-                if (fishTankRect.Contains(e.Location))
-                {
-                    foreach (var fish in fishes) fish.TargetPosition = e.Location;
-                }
-                else
-                {
-                    foreach (var fish in fishes) fish.TargetPosition = null;
-                }
+                // Target updating is now handled in GameLoop for priority logic, 
+                // but for responsiveness, we can also update it here or just let Loop handle it.
+                // Loop is frequent enough (60fps).
                 Invalidate();
             }
         }
@@ -421,37 +520,14 @@ namespace FishTankGame
 
                     if (closestFish != null)
                     {
-                        float growthMult = 1.0f + (currentLevel - 1) * 0.2f;
-                        closestFish.Eat(growthMult);
+                        FeedFish(closestFish);
                         foodCount--;
-
-                        // Reproduction Logic (Count >= 3)
-                        if (closestFish.EatCount >= 3)
-                        {
-                            Fish child = closestFish.Clone();
-                            fishes.Add(child);
-                            
-                            // Reset counters
-                            closestFish.EatCount = 0;
-                            // child.EatCount is 0 by default/clone
-                        }
                     }
                 }
                 
                 foreach (var fish in fishes) fish.TargetPosition = null;
 
-                // Level Up Check
-                if (fishes.Count >= GetTargetCount())
-                {
-                    gameTimer.Stop();
-                    foodTimer.Stop();
-                    this.Update(); 
-                    MessageBox.Show($"Level Complete! Starting Level {currentLevel + 1}", "Victory");
-                    StartLevel(currentLevel + 1);
-                    gameTimer.Start();
-                    foodTimer.Start();
-                }
-
+                CheckLevelUp();
                 Invalidate();
             }
         }
