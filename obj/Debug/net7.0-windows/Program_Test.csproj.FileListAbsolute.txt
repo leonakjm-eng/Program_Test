@@ -1,0 +1,15 @@
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.csproj.AssemblyReference.cache
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.AssemblyInfoInputs.cache
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.AssemblyInfo.cs
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.csproj.CoreCompileInputs.cache
+C:\Users\20220745\Desktop\Program_Test\bin\Debug\net7.0-windows\Program_Test.exe
+C:\Users\20220745\Desktop\Program_Test\bin\Debug\net7.0-windows\Program_Test.deps.json
+C:\Users\20220745\Desktop\Program_Test\bin\Debug\net7.0-windows\Program_Test.runtimeconfig.json
+C:\Users\20220745\Desktop\Program_Test\bin\Debug\net7.0-windows\Program_Test.dll
+C:\Users\20220745\Desktop\Program_Test\bin\Debug\net7.0-windows\Program_Test.pdb
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.dll
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\refint\Program_Test.dll
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.pdb
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\Program_Test.genruntimeconfig.cache
+C:\Users\20220745\Desktop\Program_Test\obj\Debug\net7.0-windows\ref\Program_Test.dll
